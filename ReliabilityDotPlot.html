@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<meta charset ="UTF-8">
+	
+	<title>Reliability Score Dot Plot</title>
+	<script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+	<svg width ="960" height ="600"></svg>
+
+	<script>
+
+		var margin = {top: 60, right: 30, bottom: 60, left: 60 }; // imcrease bottom margin
+		  width = 960 - margin.left - margin.right;
+		  height = 600 - margin.top - margin.bottom;
+
+		var svg = d3.select("svg")
+
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+			.append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		//Title of graph
+
+		d3.select("svg")
+			.append("text")
+			.attr("x", (width + margin.left + margin.right) / 2)	
+			.attr("y", 30)	
+			.attr("text-anchor", "middle")	
+			.style("font-size", "22px")
+			.style("font-weight", "bold")
+			.text("reliability Scores of Car Brands");
+
+		// Read csv file
+    	d3.text("CombineCarBrands1.csv").then(function(data) {
+			
+    		var rows = d3.csvParseRows(data)
+
+			  var processed = [];
+
+			//Get data by region
+        rows.forEach(function(row){
+
+			    if(row.length >= 4){
+
+			    	var make = row[0].trim();
+			    	var reliability = parseFloat(row[3]);
+
+				    if(reliability == reliability){
+
+					    var region = "";
+					    var prefix = make.substring(0, 3);
+
+				    	if(prefix == "(A)") region = "Asia";
+
+				    	else if (prefix == "(E)") region = "Europe";
+
+					    else if (prefix == "(N)") region = "North America";
+
+				    	make = make.substring(3).trim();
+
+					    processed.push({ Make: make, Region: region, Reliability: reliability});
+				}
+
+
+			}
+
+		});	
+
+		var maxScore = d3.max(processed, function(d){
+
+			return d.Reliability; 
+		});
+
+			// Adjusting xScale to start from 1
+			var xScale = d3.scalePoint()
+
+			  .domain(processed.map(function(_, i){
+
+				  return i + 1;
+			}))
+			.range([0, width]);
+
+
+
+			
+		var yScale = d3.scaleLinear()
+
+			.domain([0, maxScore])
+			.range([height, 0]);
+
+			var color = d3.scaleOrdinal()
+
+			  .domain(["Asia", "North America", "Europe"])
+			  .range(["blue", "orange", "green"]);
+
+			// Y Axis
+			svg.append("g")
+
+			  .call(d3.axisLeft(yScale));
+
+			// Y Axis Label
+			svg.append("text")
+			  .attr("x", -height / 2)
+			  .attr("y", -40)
+			  .attr("transform", "rotate(-90)")
+			  .attr("text-anchor", "middle")
+			  .style("font-size", "14px")
+			  .style("font-weight", "bold")
+			  .text("Reliability Score");
+
+			// Dots
+			svg.selectAll("circle")
+
+			  .data(processed)
+			  .enter()
+			  .append("circle")
+			  .attr("cx", function(_, i){
+				  return xScale(i + 1);})
+			  .attr("cy", function(d){
+				   return yScale(d.Reliability); })
+			  .attr("r", 5)
+			  .attr("fill", function(d) {
+
+				  return color(d.Region); });
+			// X Axis with ticks
+			svg.append("g")
+
+			  .attr("transform", "translate(0," + height + ")")
+		  	.call(d3.axisBottom(xScale));
+
+
+			// Legend
+			var regions = ["Asia", "North America", "Europe"];
+	  	var legend = svg.selectAll(".legend")
+
+			.data(regions)
+			.enter()
+			.append("g")
+			.attr("class", "legend")
+			.attr("transform", function(d, i){
+
+				return "translate(" + (width / 2 - 60 + i * 120) + ", " + (height + 40) + ")";
+			});
+
+     
+			legend.append("rect")
+
+			  .attr("width", 18)
+			  .attr("height", 18)
+			  .style("fill", function(d){
+
+				  return color(d);
+			});
+     
+      
+      
+      
+      legend.append("text")
+      .attr("x", 24)
+			.attr("y", 13)
+			.text(function(d){ return d; });
+
+	  });	
+
+	</script>
+
+</body>
+</html>	

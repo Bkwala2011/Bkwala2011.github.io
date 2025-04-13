@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<meta charset ="UTF-8">
+	
+	<title>Global Maitenance Cost Anaysis for Car Brands</title>
+	<script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+	<svg width ="960" height ="600"></svg>
+
+	<script>
+
+		var margin = {top: 60, right: 30, bottom: 100, left: 60 }; // imcrease bottom margin
+		  width = 960 - margin.left - margin.right;
+		  height = 600 - margin.top - margin.bottom;
+
+		var svg = d3.select("svg")
+
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+			.append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		//Title of graph
+
+		d3.select("svg")
+			.append("text")
+			.attr("x", (width + margin.left + margin.right) / 2)	
+			.attr("y", 30)	
+			.attr("text-anchor", "middle")	
+			.style("font-size", "22px")
+			.style("font-weight", "bold")
+			.text("Average Maintenance Cost by Car Brand Region");
+
+
+		// Read csv file
+    d3.csv("CombineCarBrands1.csv").then(function(data) {
+			
+
+			var getData = data.map(function(d){
+
+				var region;
+				var prefix = d.Make.substring(0, 3);
+
+				if (prefix == "(A)"){
+
+				  region = "Asia";
+				} else if (prefix == "(N)"){
+
+					region = "North America";
+				} else if (prefix == "(E)"){
+
+					  region = "Europe";
+				} 
+
+
+				var make = d.Make.length > 3 ? d.Make.substring(3) : d.Make;
+
+				return {
+
+					Make: make.trim(),
+
+					Model: d.Model,
+
+					Region: region,
+
+					MaintCost: parseFloat(d['Maint-Cost']),
+				};
+
+			
+			});	
+
+
+			//Group data by region
+
+			var groupedMap= d3.group(getData, function(d) { return d.Region; });
+
+			var groupedData = Array.from(groupedMap).map(function(pair) {
+
+				var region = pair[0];
+
+				var values = pair[1].slice().sort(function(a, b) {
+
+					return a.Make.localeCompare(b.Make);
+				});
+
+				return {
+
+					region: region,
+					values: values
+				};
+			});
+
+			//Create the list of car makes
+
+			var allMakesSet = new Set();
+
+			for (var i = 0; i < getData.length; i++) {
+
+				allMakesSet.add(getData[i].Make);
+			}
+
+			var allMakes = Array.from(allMakesSet).sort(function(a, b) {
+
+				return a.localeCompare(b);
+			});
+
+      // Create scales for the axes
+    var xScale = d3.scalePoint()
+
+				.domain(allMakes)
+				.range([0, width])
+
+		var maxCost = d3.max(getData, function(d) {return d.MaintCost; });
+			
+		var yScale = d3.scaleLinear()
+
+				.domain([0, maxCost])
+				.range([height, 0]);
+
+			//Color scale for region
+			
+		var color = d3.scaleOrdinal()
+
+				.domain(groupedData.map(function(d) { return d.region; }))
+				.range(["blue", "orange", "green"]);
+
+		var line = d3.line()
+			
+				.x(function(d) { return xScale(d.Make); })
+				.y(function(d) { return yScale(d.MaintCost); });
+
+			//X axis
+			
+		svg.append("g")
+        		.attr("transform", "translate(0," + height + ")")
+        		.call(d3.axisBottom(xScale).tickFormat("").tickSize(0));
+
+
+			//Y axis
+
+		svg.append("g")
+
+				.call(d3.axisLeft(yScale));
+
+
+
+     svg.append("text")
+				.attr("x", -200)
+				.attr("y", -40)
+				.style("font-size", "14px")
+				.style("font-weight", "bold")
+				.style("transform", "rotate(-90deg)")
+				.style("text-anchor", "middle")
+				.text("Maintenance Cost ($)");
+
+
+
+			groupedData.forEach(function(regionGroup) {
+
+				svg.append("path")
+					.datum(regionGroup.values)
+					.attr("fill", "none")
+					.attr("stroke", color(regionGroup.region))
+					.attr("stroke-width", 2)
+					.attr("d", line);
+
+
+				svg.selectAll(".dot-" + regionGroup.region.replace(" ", ""))
+
+					.data(regionGroup.values)
+					.enter()
+					.append("circle")
+					.attr("cx", function(d) {return xScale(d.Make);})
+					.attr("cy", function(d) {return yScale(d.MaintCost); })
+					.attr("r", 4)
+					.attr("fill", color(regionGroup.region))	
+				
+			});
+
+			var legend = svg.selectAll(".legend")
+			  .data(color.domain())
+			
+				.enter()
+				.append("g")
+				.attr("class", "legend")
+				.attr("transform", function(d, i) {
+
+					var legendX = width / 2 - 60 + i * 120;
+					var legendY = height + 40;
+					return "translate(" + legendX + "," + legendY + ")";
+				});
+				
+
+			legend.append("rect")
+				.attr("width", 18)
+				.attr("height", 18)
+				.style("fill", color);
+
+
+
+			legend.append("text")
+				.attr("x", 24)
+				.attr("y", 9)
+				.text(function(d) { return d; });
+
+
+		});
+
+	</script>
+
+</body>
+</html>	
