@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<meta charset="UTF-8">
+
+	<title>Dot Plot: Make-Model vs Maintenance Cost</title>
+
+	<script src = "https://d3js.org/d3.v7.min.js"></script>
+	<style>
+
+		body {
+
+			font-family: sans-serif;
+		}
+
+		.grid line {
+
+			stroke: grey;
+
+			stroke-opacity: 0.6;
+
+		}
+
+		.grid path{
+
+			display: none;
+		}
+
+	</style>
+</head>
+<body>	
+
+<div id ="chart"></div>
+
+<script>
+
+//Set margin, width and height of the chart
+	const margin = {top: 60, right: 200, bottom: 60, left: 150},
+		  width = 900 - margin.left - margin.right,
+		  height = 800 - margin.top - margin.bottom;
+
+	const svg = d3.select("#chart")
+	
+		.append("svg")
+		.attr("width", width + margin.left + margin.right + 100)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+ //Set colorb based on region   
+  function getColor(make){
+
+		const asia = ["Toyota", "Acura", "Honda", "Hyundai", "Nissan"];
+		const america = ["Ford", "Chevrolet", "Dodge", "Lincoln", "Cadillac", "Gmc", "Jeep", "Buick"];
+		const europe = ["Bmw", "Porsche", "Audi", "Volkswagen", "Volvo"];
+
+		if (asia.includes(make)){
+
+			return "steelblue";
+		
+		}else if(america.includes(make)){
+
+			return "green";
+		
+		}else if(europe.includes(make)){
+
+			return "red";
+		}
+
+	}
+
+ //Read file
+ d3.csv("https://gist.githubusercontent.com/Bkwala2011/64a5411650bb4f5dd47eb275cb614cd7/raw/3f8b2952c6935e6b78e1e143ed9ac7d4bc1f33a6/CombineCarBrands1.csv").then(data => {
+
+		data = data.map(d => ({
+
+			Make: d.Make,
+			Model: d.Model,
+			MakeModel: `${d.Make} ${d.Model}`,
+			MaintCost: +d["Maint-Cost"]
+		}));
+
+// X axis scale for Maintenance cost		
+    const x = d3.scaleLinear()
+
+      .domain([0, d3.max(data, d => d.MaintCost) + 50])
+      .range([0, width]);
+
+// X axis scale for Make-Model
+    const y = d3.scaleBand()
+
+      .domain(data.map(d => d.MakeModel))
+      .range([0, height])
+      .padding(1);
+
+
+// Create grid lines for X axis
+    svg.append("g")
+     
+      .attr("class", "grid")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x).tickSize(-height).tickFormat("")); 
+
+//Create grid lines for Y axis
+     svg.append("g")
+     
+      .attr("class", "grid")
+      .call(d3.axisLeft(y).tickSize(-width).tickFormat("")); 
+
+// X axis
+     svg.append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x));
+
+
+     svg.append("g")
+      .call(d3.axisLeft(y)); 
+
+
+    svg.selectAll("circle")
+
+      .data(data)
+      .join("circle")
+
+        .attr("cx", d => x(d.MaintCost))
+        .attr("cy", d => y(d.MakeModel))
+        .attr("r", 6)
+        .style("fill", d => getColor(d.Make));
+
+// Add label for x axis
+    svg.append("text")
+
+        .attr("x", width/2)
+        .attr("y", height + 40)
+        .attr("text-anchor", "middle")
+        .style("font-size","14px")
+        .text("Maitenance cost ($)");
+
+//Add label for Y axis  
+    svg.append("text")
+
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height/2)
+        .attr("y", -margin.left + 20)
+        .attr("text-anchor", "middle")
+        .style("font-size","14px")
+        .text("Make-Model");
+ 
+
+//Add title for chart
+    svg.append("text")
+
+        .attr("x", width/2)
+        .attr("y", -20)
+        .attr("text-anchor", "middle")
+        .style("font-size","20px")
+        .style("font-weight","bold")
+        .text("Dot Plot: Make-Model vs Maitenance Cost");
+
+
+    // Color Legend
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width + 40}, 30)`);   
+    const regions = [
+
+        {color: "steelblue", label: "Asia Car Brands"},
+        {color: "green", label: "North America Car Brands"},
+        {color: "red", label: "European Car Brands"},
+     ];  
+
+    legend.selectAll("circle")
+
+        .data(regions)
+        .enter()
+        .append ("circle")
+
+          .attr("cx", 0)
+          .attr("cy", (d, i) => i * 30)
+          .attr("r", 6)
+          .style("fill", d => d.color);
+
+
+     legend.selectAll("text")
+
+        .data(regions)
+        .enter()
+        .append ("text")
+
+          .attr("x", 15)
+          .attr("y", (d, i) => i * 30)
+          .text(d => d.label)
+          .style("font-size", "15px")
+
+     }).catch(err => console.error(err));
+     
+ </script>
+ 
+ </body>
+ </html>         
