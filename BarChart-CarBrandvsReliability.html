@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+
+<meta charset="UTF-8">
+
+<script src = "https://d3js.org/d3.v6.js"></script>
+	
+<div id ="my_dataviz"></div>
+
+<script> -->
+
+
+  // Dimensions
+	const margin = {top: 60, right: 70, bottom: 50, left: 200},
+		  width = 1000 - margin.left - margin.right,
+		  height = 800 - margin.top - margin.bottom;
+
+
+  // Append svg
+	const svg = d3.select("#my_dataviz")
+	
+		.append("svg")
+		.attr("width", width + margin.left + margin.right + 150)
+		.attr("height", height + margin.top + margin.bottom + 50)
+		.append("g")
+		.attr("transform", `translate(${margin.left},${margin.top})`);
+   
+  function getColor(make){
+
+		const asia = ["Toyota", "Acura", "Honda", "Hyundai", "Nissan"];
+		const america = ["Ford", "Chevrolet", "Dodge", "Lincoln", "Cadillac", "Gmc", "Jeep", "Buick"];
+		const europe = ["Bmw", "Porsche", "Audi", "Volkswagen", "Volvo"];
+
+		if (asia.includes(make)){
+
+			return "steelblue";
+		
+		}else if(america.includes(make)){
+
+			return "green";
+		
+		}else if(europe.includes(make)){
+
+			return "red";
+		}
+
+	}
+
+ // Load data
+ d3.csv("https://gist.githubusercontent.com/Bkwala2011/64a5411650bb4f5dd47eb275cb614cd7/raw/3f8b2952c6935e6b78e1e143ed9ac7d4bc1f33a6/CombineCarBrands1.csv").then(function(data) {
+
+    data.forEach(d => d["Reliability score"] = +d["Reliability score"]);
+    data.sort((a, b) => b["Reliability score"] - a["Reliability score"]);
+
+
+  const x = d3.scaleLinear()
+
+      .domain([0, 100])
+      .range([0, width]);
+
+
+  const y = d3.scaleBand()
+
+      .range([0, height])
+      .domain(data.map(d => `${d.Make} ${d.Model}`))
+      .padding(0.1);
+
+  svg.append("g")
+     
+      .attr("transform", `translate(0, ${height})`)
+      .call(d3.axisBottom(x)); 
+
+
+     svg.append("g")
+      .call(d3.axisLeft(y)); 
+
+
+
+  svg.selectAll("rect")
+
+      .data(data)
+      .join("rect")
+      .attr("x", x(0))
+      .attr("y", d => y(`${d.Make} ${d.Model}`))
+      .attr("width", d => x(d["Reliability score"]))
+      .attr("height", y.bandwidth())
+      .attr("fill", d => getColor(d.Make));
+   
+  // X-Axis
+    svg.append("text")
+
+        .attr("x", width/2)
+        .attr("y", height + 40)
+        .attr("text-anchor", "middle")
+        .style("font-size","14px")
+        .text("Reliability Scores");
+
+  // Y-Axis
+    svg.append("text")
+
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height/2)
+        .attr("y", -margin.left + 20)
+        .attr("text-anchor", "middle")
+        .style("font-size","14px")
+        .text("Car Brands");
+
+  // Chart Title
+    svg.append("text")
+
+        .attr("x", width/2)
+        .attr("y", -20)
+        .attr("text-anchor", "middle")
+        .style("font-size","20px")
+        .style("font-weight","bold")
+        .text("Bar Chart: Car Brands vs Reliability");
+
+
+ // Color Legend
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width + 50}, 0)`);   
+    const regions = [
+
+        {color: "steelblue", label: "Asia Car Brands"},
+        {color: "green", label: "North America Car Brands"},
+        {color: "red", label: "European Car Brands"},
+     ];  
+
+  legend.selectAll("rect")
+        .data(regions)
+        .join("rect")
+        .attr("x", 0)
+        .attr("y", (d, i) => i * 25)
+        .attr("width", 20)
+        .attr("height", 20)
+        .attr("fill", d => d.color);
+
+  legend.selectAll("text")
+
+        .data(regions)
+        .join("text")
+        .attr("x", 30)
+        .attr("y", (d, i) => i * 25 + 15)
+        .text(d => d.label)
+        .style("font-size", "13px")
+
+     }).catch(err => console.error(err));
+     
+ </script>
