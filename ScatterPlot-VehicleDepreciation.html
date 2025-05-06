@@ -10,47 +10,62 @@
   <script src = "https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 	<style>
 
-		body {
+	  	body {
 
-			font-family: sans-serif;
-		}
+			  font-family: sans-serif;
+		  }
 
-        #my_dataviz {
+       #my_dataviz {
 
             width: 80%;
             margin: auto;
-        }
+      }
 
 		.grid line {
 
-			stroke: grey;
+			  stroke: grey;
 
-			stroke-opacity: 0.2;
+			  stroke-opacity: 0.2;
 
 		}
 
 		.grid path{
 
-			display: none;
+		  	display: none;
 		}
 
-        text.title {
-            font-size: 18px;
-            font-weight: bold;
-            text-anchor: middle;
-        }
+     text.title {
+        font-size: 18px;
+        font-weight: bold;
+        text-anchor: middle;
+      }
 
-        text.axis-label {
-            font-size: 13px;
-            font-weight: bold;
-            text-anchor: middle;
+     text.axis-label {
+        font-size: 13px;
+        font-weight: bold;
+        text-anchor: middle;
        }
+
+    .tooltip {
+  
+         position: absolute;
+         background-color: white;
+         padding: 8px;
+         border-radius: 4px;
+         pointer-events: none;
+         opacity: 0;
+         font-size: 14px;
+         transition: opacity 0.3s;
+         
+      }
 
 	</style>
 </head>
 <body>	
 
 <div id ="my_dataviz"></div>
+
+<div id ="tooltip" class="tooltip"></div>
 
 <script>
 
@@ -137,16 +152,37 @@
     .attr("dy", "0.2em")
     .style("font-size", "11px")
 
+
+  const tooltip = d3.select("#tooltip")  
+
+
   // Add points
   svg.append("g")
 
     .selectAll("circle")
     .data(data)
     .join("circle")
+    
     .attr("cx", d => x(`${d["Make"]} ${d["Model"]}`) + x.bandwidth() / 2)
     .attr("cy", d => y(+d["3year-Depreciation-Value"]))
     .attr("r", 5)
-    .style("fill", d => getColor(d.Make));
+    .style("fill", d => getColor(d.Make))
+
+    .on("mouseover", function(event, d) {
+
+        tooltip.transition().duration(200).style("opacity", 1);
+        tooltip.html(`${d["Make"]} ${d["Model"]}<br>Depreciation: ${d["3year-Depreciation-Value"]}%`)
+
+          .style("left", `${event.pageX + 5}px`)
+          .style("top", `${event.pageY - 28}px`);
+
+    })
+
+    .on("mouseout", function() {
+
+        tooltip.transition().duration(500).style("opacity", 0);
+    });
+
 
 
  //Add title for chart
