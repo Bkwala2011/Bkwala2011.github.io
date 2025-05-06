@@ -3,6 +3,7 @@
 <meta charset="UTF-8">
 
 <script src = "https://d3js.org/d3.v6.js"></script>
+<script src = "https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 	
 <div id ="my_dataviz"></div>
 
@@ -23,6 +24,18 @@
 		.attr("height", height + margin.top + margin.bottom + 50)
 		.append("g")
 		.attr("transform", `translate(${margin.left},${margin.top})`);
+
+ // Tooltip
+
+  var tooltip = d3.select("#my_dataviz") 
+  
+    .append("div")
+    .style("position", "absolute")
+    .style("background-color", "white")
+    .style("padding", "6px")
+    .style("border-radius", "hidden")
+    .style("visibility", "hidden")
+    .style("font-size", "12px");
    
   function getColor(make){
 
@@ -36,11 +49,11 @@
 		
 		}else if(america.includes(make)){
 
-			return "green";
+			return "seagreen";
 		
 		}else if(europe.includes(make)){
 
-			return "red";
+			return "tomato";
 		}
 
 	}
@@ -83,7 +96,28 @@
       .attr("y", d => y(`${d.Make} ${d.Model}`))
       .attr("width", d => x(d["Reliability score"]))
       .attr("height", y.bandwidth())
-      .attr("fill", d => getColor(d.Make));
+      .attr("fill", d => getColor(d.Make))
+      .on("mouseover", function(event, d){
+
+        tooltip
+
+          .style("visibility", "visible")
+          .html(`<strong>${d.Make} ${d.Model}</strong><br/>Score: ${d["Reliability score"]}`);
+      })
+
+      .on("mousemove", function(event){
+
+        tooltip
+
+          .style("top", (event.pageY - 50) + "px")
+          .style("left", (event.pageX + 15) + "px");
+      })
+
+      .on("mouseout", function(){
+
+        tooltip.style("visibility", "hidden");
+      });
+
    
   // X-Axis
     svg.append("text")
@@ -91,7 +125,7 @@
         .attr("x", width/2)
         .attr("y", height + 40)
         .attr("text-anchor", "middle")
-        .style("font-size","14px")
+        .style("font-size","20px")
         .text("Reliability Scores");
 
   // Y-Axis
@@ -99,9 +133,9 @@
 
         .attr("transform", "rotate(-90)")
         .attr("x", -height/2)
-        .attr("y", -margin.left + 20)
+        .attr("y", -margin.left + 70)
         .attr("text-anchor", "middle")
-        .style("font-size","14px")
+        .style("font-size","20px")
         .text("Car Brands");
 
   // Chart Title
@@ -121,8 +155,8 @@
     const regions = [
 
         {color: "steelblue", label: "Asia Car Brands"},
-        {color: "green", label: "North America Car Brands"},
-        {color: "red", label: "European Car Brands"},
+        {color: "seagreen", label: "North America Car Brands"},
+        {color: "tomato", label: "European Car Brands"},
      ];  
 
   legend.selectAll("rect")
@@ -143,6 +177,52 @@
         .text(d => d.label)
         .style("font-size", "13px")
 
-     }).catch(err => console.error(err));
+
+  // Annotation: Highlight high reliability Asian brands
+
+   const annotation = [
+   
+    {
+
+      note: {
+
+        label: "Brands like Toyota and Honda rank high in Reliability.",
+        title: "Asian Cars have High Reliability.",
+        align: "middle",
+        wrap: 200
+      },
+
+      color: "black",
+
+      x: 650,
+      y: 80,
+      dy: 200,
+      dx: 162,
+
+      subject: {
+
+        radius: 100,
+
+        radiusPadding: 1
+      },
+
+      type: d3.annotationCalloutCircle
+
+     }
+     
+  ];
+  
+  const makeAnnotations = d3.annotation()
+
+    .type(d3.annotationCalloutCircle)
+    .annotations(annotation);
+
+  svg.append("g")
+  
+    .call(makeAnnotations);
+
+
+
+ }).catch(err => console.error(err));
      
  </script>
