@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle Treemap</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+    }
+    .node text {
+      pointer-events: none;
+    }
+    .tooltip {
+      position: absolute;
+      visibility: hidden;
+      background-color: white;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Vehicle Treemap: Region → Make → Model</h2>
+  <div id="treemap"></div>
+
+  <script>
+    const width = 1000;
+    const height = 800;
+    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+
+    const color = d3.scaleOrdinal(d3.schemeTableau10);
+
+    // Tooltip div
+    const tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "tooltip");
+
+    function getRegion(make) {
+      const asia = ["Toyota", "Acura", "Honda", "Hyundai", "Nissan"];
+      const america = ["Ford", "Chevrolet", "Dodge", "Lincoln", "Cadillac", "Gmc", "Jeep", "Buick"];
+      const europe = ["Bmw", "Porsche", "Audi", "Volkswagen", "Volvo"];
+      if (asia.includes(make)) return "Asia";
+      else if (america.includes(make)) return "America";
+      else if (europe.includes(make)) return "Europe";
+      else return "Other";
+    }
+
+    function renderTreeMap(data) {
+      const svg = d3.select("#treemap")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      data.forEach(d => d.Overall = +d.Overall);
+
+      const nested = d3.group(
+        data,
+        d => getRegion(d.Make),
+        d => d.Make
+      );
+
+      const hierarchyData = {
+        name: "root",
+        children: Array.from(nested, ([region, makes]) => ({
+          name: region,
+          children: Array.from(makes, ([make, models]) => ({
+            name: make,
+            children: models.map(d => ({
+              name: d.Model,
+              value: d.Overall
+            }))
+          }))
+        }))
+      };
+
+      const root = d3.hierarchy(hierarchyData)
+        .sum(d => d.value)
+        .sort((a, b) => b.value - a.value);
+
+      d3.treemap()
+        .size([width, height])
+        .paddingInner(2)
+        .paddingOuter(2)
+        .paddingTop(10)
+        (root);
+
+      svg.selectAll("rect")
+        .data(root.leaves())
+        .join("rect")
+        .attr("x", d => d.x0)
+        .attr("y", d => d.y0)
+        .attr("width", d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("fill", d => color(d.parent.parent.data.name))
+        .on("mouseover", function(event, d) {
+          d3.select(this).attr("fill", "orange");
+          tooltip
+            .style("visibility", "visible")
+            .text(`${d.parent.parent.data.name} → ${d.parent.data.name} → ${d.data.name}: ${d.data.value}`);
+        })
+        .on("mousemove", function(event) {
+          tooltip
+            .style("top", (event.pageY + 10) + "px")
+            .style("left", (event.pageX + 10) + "px");
+        })
+        .on("mouseout", function(event, d) {
+          d3.select(this).attr("fill", color(d.parent.parent.data.name));
+          tooltip.style("visibility", "hidden");
+        });
+
+      svg.selectAll(".nameText")
+        .data(root.leaves())
+        .join("text")
+        .attr("class", "nameText")
+        .attr("x", d => d.x0 + 4)
+        .attr("y", d => d.y0 + 14)
+        .text(d => `${d.parent.data.name} ${d.data.name}`)
+        .attr("font-size", "11px")
+        .attr("fill", "white");
+
+      svg.selectAll(".valueText")
+        .data(root.leaves())
+        .join("text")
+        .attr("class", "valueText")
+        .attr("x", d => d.x0 + 4)
+        .attr("y", d => d.y0 + 28)
+        .text(d => d.data.value)
+        .attr("font-size", "10px")
+        .attr("fill", "white");
+
+      svg.selectAll(".regionLabel")
+        .data(root.children)
+        .join("text")
+        .attr("class", "regionLabel")
+        .attr("x", d => d.x0 + 9)
+        .attr("y", d => d.y0 + 14)
+        .text(d => d.data.name)
+        .attr("font-weight", "bold")
+        .attr("font-size", "14px")
+        .attr("fill", "black");
+    }
+
+    // Load CSV and render treemap
+    d3.csv("https://gist.githubusercontent.com/Bkwala2011/64a5411650bb4f5dd47eb275cb614cd7/raw/3f8b2952c6935e6b78e1e143ed9ac7d4bc1f33a6/CombineCarBrands1.csv").then(data => {
+      renderTreeMap(data);
+    });
+  </script>
+</body>
+</html>
