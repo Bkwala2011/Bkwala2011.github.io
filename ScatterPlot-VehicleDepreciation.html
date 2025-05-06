@@ -7,6 +7,7 @@
 	<title>Vehicle Depreciation Scatter Plot</title>
 
 	<script src = "https://d3js.org/d3.v6.min.js"></script>
+  <script src = "https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 	<style>
 
 		body {
@@ -54,9 +55,9 @@
 <script>
 
 //Set margin, width and height of the chart
-	const margin = {top: 50, right: 150, bottom: 100, left: 70},
-		  width = 1000 - margin.left - margin.right,
-		  height = 600 - margin.top - margin.bottom;
+	const margin = {top: 50, right: 300, bottom: 100, left: 70},
+		  width = 1200 - margin.left - margin.right,
+		  height = 800 - margin.top - margin.bottom;
 
 
 //Append SVG
@@ -81,17 +82,17 @@
 		
 		}else if(america.includes(make)){
 
-			return "green";
+			return "seagreen";
 		
 		}else if(europe.includes(make)){
 
-			return "red";
+			return "tomato";
 		}
 
 	}
   
   //Read file
- d3.csv("https://gist.githubusercontent.com/Bkwala2011/64a5411650bb4f5dd47eb275cb614cd7/raw/3f8b2952c6935e6b78e1e143ed9ac7d4bc1f33a6/CombineCarBrands1.csv ").then(function(data) {
+ d3.csv("https://gist.githubusercontent.com/Bkwala2011/64a5411650bb4f5dd47eb275cb614cd7/raw/3f8b2952c6935e6b78e1e143ed9ac7d4bc1f33a6/CombineCarBrands1.csv").then(function(data) {
 
 		data.sort((a, b) => +b["3year-Depreciation-Value"] - +a["3year-Depreciation-Value"]);
 
@@ -184,8 +185,8 @@
     const regions = [
 
         {color: "steelblue", label: "Asia Car Brands"},
-        {color: "green", label: "North America Car Brands"},
-        {color: "red", label: "European Car Brands"},
+        {color: "seagreen", label: "North America Car Brands"},
+        {color: "tomato", label: "European Car Brands"},
      ];  
 
     legend.selectAll("circle")
@@ -210,6 +211,53 @@
           .attr("y", (d, i) => i * 30)
           .text(d => d.label)
           .style("font-size", "15px")
+
+
+      // Annotation
+
+      const lowDepreciation = data.slice(-6);
+      
+      const avgX = d3.mean(lowDepreciation, d => x(`${d["Make"]} ${d["Model"]}`) + x.bandwidth() / 2);
+      const avgY = d3.mean(lowDepreciation, d => y(+d["3year-Depreciation-Value"]));
+
+       const annotation = [
+   
+    {
+
+      note: {
+
+        label: "",
+        title: "Asian and European Cars have Higher retention value.",
+        align: "middle",
+        wrap: 200
+      },
+
+      color: "black",
+
+      x: avgX,
+      y: avgY,
+      dy: 150,
+      dx: 170,
+
+      subject: {
+
+        radius: 100,
+
+        radiusPadding: 1
+      },
+
+      type: d3.annotationCalloutCircle
+
+     }
+     
+  ];
+  
+  const makeAnnotations = d3.annotation().annotations(annotation);
+
+  svg.append("g").call(makeAnnotations);
+  
+       
+
 
      }).catch(err => console.error(err));
      
