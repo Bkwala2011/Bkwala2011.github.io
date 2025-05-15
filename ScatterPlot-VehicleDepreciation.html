@@ -70,7 +70,7 @@
 <script>
 
 //Set margin, width and height of the chart
-	const margin = {top: 50, right: 300, bottom: 100, left: 70},
+	const margin = {top: 50, right: 300, bottom: 140, left: 70},
 		  width = 1200 - margin.left - margin.right,
 		  height = 800 - margin.top - margin.bottom;
 
@@ -147,7 +147,7 @@
     .call(d3.axisBottom(x))
     .selectAll("text")
     .attr("text-anchor", "end")
-    .attr("transform", "rotate(-45)")
+    .attr("transform", "rotate(-90)")
     .attr("dx", "-0.6em")
     .attr("dy", "0.2em")
     .style("font-size", "11px")
@@ -209,7 +209,7 @@
   svg.append("text")
 
     .attr("x", width/2)
-    .attr("y", height + 100)
+    .attr("y", height + 140)
     .attr("class", "axis-label")
     .text("Vehicle Make and Model");
    
