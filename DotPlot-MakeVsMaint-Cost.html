@@ -7,6 +7,7 @@
 	<title>Dot Plot: Make-Model vs Maintenance Cost</title>
 
 	<script src = "https://d3js.org/d3.v7.min.js"></script>
+    <script src = "https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 	<style>
 
 		body {
@@ -18,7 +19,7 @@
 
 			stroke: grey;
 
-			stroke-opacity: 0.6;
+			stroke-opacity: 0.2;
 
 		}
 
@@ -27,11 +28,25 @@
 			display: none;
 		}
 
+        .tooltip {
+  
+            position: absolute;
+            background-color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+
+        }
+
+
 	</style>
 </head>
 <body>	
 
 <div id ="chart"></div>
+
+<div class ="tooltip" id="tooltip"></div>
 
 <script>
 
@@ -62,11 +77,11 @@
 		
 		}else if(america.includes(make)){
 
-			return "green";
+			return "seagreen";
 		
 		}else if(europe.includes(make)){
 
-			return "red";
+			return "tomato";
 		}
 
 	}
@@ -112,11 +127,7 @@
 // X axis
      svg.append("g")
       .attr("transform", `translate(0, ${height})`)
-      .call(d3.axisBottom(x))
-      .selectAll("text")
-      .style("font-size", "13px");
-
-
+      .call(d3.axisBottom(x));
 
 
      svg.append("g")
@@ -131,7 +142,35 @@
         .attr("cx", d => x(d.MaintCost))
         .attr("cy", d => y(d.MakeModel))
         .attr("r", 6)
-        .style("fill", d => getColor(d.Make));
+        .style("fill", d => getColor(d.Make))
+        .on("mouseover", function(event, d){
+
+            const tooltip = d3.select("#tooltip");
+
+            tooltip
+
+                .style("display", "inline-block")
+                .html(`<strong>${d.Make} ${d.Model}</strong><br/>Maitenance Cost: $${d.MaintCost}`);
+      })
+
+      .on("mousemove", function(event){
+
+        const tooltip = d3.select("#tooltip");
+
+        tooltip
+
+          .style("top", (event.pageY + 10) + "px")
+          .style("left", (event.pageX + 10) + "px");
+      })
+
+      .on("mouseout", function(){
+
+        const tooltip = d3.select("#tooltip");
+
+        tooltip.style("display", "none");
+      });
+
+
 
 // Add label for x axis
     svg.append("text")
@@ -139,8 +178,8 @@
         .attr("x", width/2)
         .attr("y", height + 40)
         .attr("text-anchor", "middle")
-        .style("font-size","14px")
-        .text("Maitenance cost ($)");
+        .style("font-size","16px")
+        .text("Annual Maintenance cost ($)");
 
 //Add label for Y axis  
     svg.append("text")
@@ -149,7 +188,7 @@
         .attr("x", -height/2)
         .attr("y", -margin.left + 20)
         .attr("text-anchor", "middle")
-        .style("font-size","14px")
+        .style("font-size","16px")
         .text("Make-Model");
  
 
@@ -161,7 +200,7 @@
         .attr("text-anchor", "middle")
         .style("font-size","20px")
         .style("font-weight","bold")
-        .text("Dot Plot: Make-Model vs Maitenance Cost");
+        .text("Dot Plot: Make-Model vs Maintenance Cost");
 
 
     // Color Legend
@@ -170,8 +209,8 @@
     const regions = [
 
         {color: "steelblue", label: "Asia Car Brands"},
-        {color: "green", label: "North America Car Brands"},
-        {color: "red", label: "European Car Brands"},
+        {color: "seagreen", label: "North America Car Brands"},
+        {color: "tomato", label: "European Car Brands"},
      ];  
 
     legend.selectAll("circle")
@@ -196,6 +235,52 @@
           .attr("y", (d, i) => i * 30)
           .text(d => d.label)
           .style("font-size", "15px")
+
+
+
+
+    const annotation = [
+   
+    {
+
+      note: {
+
+        label: "Brands like Bmw, Porsche and Audi rank high in annual Maintenance Cost.",
+        title: "European Cars have High Maintenance Cost.",
+        align: "middle",
+        wrap: 200
+      },
+
+      color: "black",
+
+      x: 500,
+      y: 500,
+      dy: 100,
+      dx: 200,
+      subject: {
+
+        radius: 100,
+
+        radiusPadding: 1
+      },
+
+      type: d3.annotationCalloutCircle
+
+     }
+     
+  ];
+  
+  const makeAnnotations = d3.annotation()
+
+    .type(d3.annotationCalloutCircle)
+    .annotations(annotation);
+
+   const annotationGroup = svg.append("g")
+  
+    .call(makeAnnotations);
+   
+   annotationGroup.lower();
+
 
      }).catch(err => console.error(err));
      
